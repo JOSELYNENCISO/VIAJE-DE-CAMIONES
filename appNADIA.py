@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
 # =========================
 # CONFIGURACIÓN DASHBOARD
@@ -16,6 +17,7 @@ st.title("⛏️ Dashboard de Malla de Voladura - Carguío por Camión")
 archivo = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
 if archivo:
+
     df = pd.read_excel(archivo)
 
     # =========================
@@ -25,7 +27,7 @@ if archivo:
     df["Camion"] = df["Camion"].astype(str).str.strip()
 
     df["Viaje"] = df["Viaje"].astype(str).str.replace("V", "")
-    df["Viaje"] = pd.to_numeric(df["Viaje"], errors='coerce')
+    df["Viaje"] = pd.to_numeric(df["Viaje"], errors="coerce")
 
     df = df.dropna(subset=["X", "Y", "Camion", "Viaje"])
 
@@ -60,10 +62,8 @@ if archivo:
     st.markdown("---")
 
     # =========================
-    # MAPA DE TALADROS
+    # COLORES
     # =========================
-    st.subheader("📍 Plano de Taladros")
-
     colores_camion = {
         "PEQ13": "#4E79A7",
         "PEQ14": "#59A14F",
@@ -73,57 +73,74 @@ if archivo:
         "PEQ16": "#B07AA1"
     }
 
+    # =========================
+    # MAPA
+    # =========================
+    st.subheader("📍 Plano de Taladros")
+
     fig, ax = plt.subplots(figsize=(10, 10))
 
-    # =========================
-    # GRAFICADO
-    # =========================
     for camion in df["Camion"].unique():
         sub_camion = df[df["Camion"] == camion]
         color = colores_camion.get(camion, "black")
 
         for _, row in sub_camion.iterrows():
 
-            # 🔥 VIAJE: 1 círculo, 2 triángulo
-            if row["Viaje"] == 1:
-                marker = "o"
-            else:
-                marker = "^"
+            # Forma por viaje
+            marker = "o" if row["Viaje"] == 1 else "^"
 
             ax.scatter(
                 row["X"], row["Y"],
                 c=color,
                 marker=marker,
                 s=90,
-                alpha=0.8,
-                edgecolors='black'
+                alpha=0.85,
+                edgecolors="black"
             )
 
-            ax.text(row["X"], row["Y"], str(row["ID"]), fontsize=6,
-                    ha='center', va='bottom')
+            # ID ARRIBA DEL PUNTO
+            ax.text(
+                row["X"], row["Y"] + 0.5,
+                str(row["ID"]),
+                fontsize=6,
+                ha="center",
+                va="bottom"
+            )
 
     # =========================
-    # LEYENDA SOLO CAMIONES
+    # LEYENDA COMPLETA
     # =========================
-    legend_handles = [
-        Patch(facecolor=color, edgecolor='black', label=camion)
+    legend_camiones = [
+        Patch(facecolor=color, edgecolor="black", label=f"Camión {camion}")
         for camion, color in colores_camion.items()
         if camion in df["Camion"].values
     ]
 
-    ax.legend(handles=legend_handles,
-              title="Camiones",
-              bbox_to_anchor=(1.05, 1),
-              loc='upper left')
+    legend_viajes = [
+        Line2D([0], [0], marker='o', color='w', label='Viaje 1 (Círculo)',
+               markerfacecolor='gray', markersize=8),
+        Line2D([0], [0], marker='^', color='w', label='Viaje 2+ (Triángulo)',
+               markerfacecolor='gray', markersize=8)
+    ]
+
+    ax.legend(
+        handles=legend_camiones + legend_viajes,
+        title="Leyenda",
+        bbox_to_anchor=(1.05, 1),
+        loc="upper left"
+    )
 
     # =========================
-    # TÍTULO Y FORMATO
+    # ESTILO
     # =========================
-    ax.set_title("Distribución de Taladros por Camión y Viaje")
+    ax.set_title("Distribución de Taladros por Camión y Viaje", fontsize=14, fontweight="bold")
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
-    ax.grid(True, linestyle='--', alpha=0.3)
-    ax.set_aspect('equal')
+
+    # ❌ SIN GRILLA
+    ax.grid(False)
+
+    ax.set_aspect("equal")
 
     st.pyplot(fig)
 
@@ -131,11 +148,11 @@ if archivo:
     # RESUMEN
     # =========================
     st.subheader("🚛 Taladros por Camión")
-    resumen = df.groupby("Camion")['ID'].count().reset_index()
+
+    resumen = df.groupby("Camion")["ID"].count().reset_index()
     resumen.columns = ["Camión", "Taladros"]
 
     st.dataframe(resumen)
 
 else:
     st.info("Sube un archivo Excel para visualizar el dashboard")
-
