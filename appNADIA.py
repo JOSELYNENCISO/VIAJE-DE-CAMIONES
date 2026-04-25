@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+from io import BytesIO
 
 # =========================
 # CONFIGURACIÓN DASHBOARD
@@ -94,10 +95,9 @@ if archivo:
                 marker=marker,
                 s=95,
                 alpha=0.9,
-                linewidths=0  # ❌ sin borde negro
+                linewidths=0
             )
 
-            # IDs más arriba
             ax.text(
                 row["X"], row["Y"] + 1.0,
                 str(row["ID"]),
@@ -106,9 +106,6 @@ if archivo:
                 va="bottom"
             )
 
-    # =========================
-    # OCULTAR EJES
-    # =========================
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_xlabel("")
@@ -139,7 +136,21 @@ if archivo:
     st.pyplot(fig)
 
     # =========================
-    # RESUMEN POR CAMIÓN Y VIAJE
+    # DESCARGA HD
+    # =========================
+    buffer = BytesIO()
+    fig.savefig(buffer, format="png", dpi=300, bbox_inches="tight")
+    buffer.seek(0)
+
+    st.download_button(
+        label="📥 Descargar gráfico en HD",
+        data=buffer,
+        file_name="malla_voladura_hd.png",
+        mime="image/png"
+    )
+
+    # =========================
+    # RESUMEN
     # =========================
     st.subheader("🚛 Resumen de Carguío por Camión y Viaje")
 
