@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 # =========================
 # CONFIGURACIÓN DASHBOARD
@@ -72,32 +73,52 @@ if archivo:
         "PEQ16": "#B07AA1"
     }
 
-    tamaño_viaje = {1: 60, 2: 90, 3: 130, 4: 170}
-
     fig, ax = plt.subplots(figsize=(10, 10))
 
+    # =========================
+    # GRAFICADO
+    # =========================
     for camion in df["Camion"].unique():
-        for viaje in df["Viaje"].unique():
+        sub_camion = df[df["Camion"] == camion]
+        color = colores_camion.get(camion, "black")
 
-            sub = df[(df["Camion"] == camion) & (df["Viaje"] == viaje)]
+        for _, row in sub_camion.iterrows():
 
-            if sub.empty:
-                continue
+            # 🔥 VIAJE: 1 círculo, 2 triángulo
+            if row["Viaje"] == 1:
+                marker = "o"
+            else:
+                marker = "^"
 
             ax.scatter(
-                sub["X"], sub["Y"],
-                c=colores_camion.get(camion, "black"),
-                s=tamaño_viaje.get(viaje, 80),
-                alpha=0.75,
+                row["X"], row["Y"],
+                c=color,
+                marker=marker,
+                s=90,
+                alpha=0.8,
                 edgecolors='black'
             )
 
-    # IDs (opcional)
-    offset = (df["Y"].max() - df["Y"].min()) * 0.01
+            ax.text(row["X"], row["Y"], str(row["ID"]), fontsize=6,
+                    ha='center', va='bottom')
 
-    for _, row in df.iterrows():
-        ax.text(row["X"], row["Y"] + offset, str(row["ID"]), fontsize=6)
+    # =========================
+    # LEYENDA SOLO CAMIONES
+    # =========================
+    legend_handles = [
+        Patch(facecolor=color, edgecolor='black', label=camion)
+        for camion, color in colores_camion.items()
+        if camion in df["Camion"].values
+    ]
 
+    ax.legend(handles=legend_handles,
+              title="Camiones",
+              bbox_to_anchor=(1.05, 1),
+              loc='upper left')
+
+    # =========================
+    # TÍTULO Y FORMATO
+    # =========================
     ax.set_title("Distribución de Taladros por Camión y Viaje")
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
@@ -107,13 +128,8 @@ if archivo:
     st.pyplot(fig)
 
     # =========================
-    # RESUMEN POR CAMIÓN
+    # RESUMEN
     # =========================
     st.subheader("🚛 Taladros por Camión")
     resumen = df.groupby("Camion")['ID'].count().reset_index()
-    resumen.columns = ["Camión", "Taladros"]
-
-    st.dataframe(resumen)
-
-else:
-    st.info("Sube un archivo Excel para visualizar el dashboard")
+    resumen.columns = ["Cami
