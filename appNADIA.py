@@ -132,4 +132,10 @@ if archivo:
     # =========================
     st.subheader("🚛 Taladros por Camión")
     resumen = df.groupby("Camion")['ID'].count().reset_index()
-    resumen.columns = ["Cami
+    resumen.columns = ["Camión", "Taladros"]
+
+    st.dataframe(resumen)
+
+else:
+    st.info("Sube un archivo Excel para visualizar el dashboard")
+
