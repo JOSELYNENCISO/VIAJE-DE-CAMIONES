@@ -62,15 +62,15 @@ if archivo:
     st.markdown("---")
 
     # =========================
-    # COLORES
+    # COLORES CORPORATIVOS
     # =========================
     colores_camion = {
-        "PEQ13": "#4E79A7",
-        "PEQ14": "#59A14F",
-        "PEQ15": "#F28E2B",
-        "PEQ02": "#E15759",
-        "PEQ03": "#76B7B2",
-        "PEQ16": "#B07AA1"
+        "PEQ13": "#1F4E79",
+        "PEQ14": "#2E7D32",
+        "PEQ15": "#EF6C00",
+        "PEQ02": "#C62828",
+        "PEQ03": "#00838F",
+        "PEQ16": "#6A1B9A"
     }
 
     # =========================
@@ -82,25 +82,24 @@ if archivo:
 
     for camion in df["Camion"].unique():
         sub_camion = df[df["Camion"] == camion]
-        color = colores_camion.get(camion, "black")
+        color = colores_camion.get(camion, "gray")
 
         for _, row in sub_camion.iterrows():
 
-            # Forma por viaje
             marker = "o" if row["Viaje"] == 1 else "^"
 
             ax.scatter(
                 row["X"], row["Y"],
                 c=color,
                 marker=marker,
-                s=90,
-                alpha=0.85,
-                edgecolors="black"
+                s=95,
+                alpha=0.9,
+                linewidths=0  # ❌ sin borde negro
             )
 
-            # ID ARRIBA DEL PUNTO
+            # IDs más arriba
             ax.text(
-                row["X"], row["Y"] + 0.5,
+                row["X"], row["Y"] + 1.0,
                 str(row["ID"]),
                 fontsize=6,
                 ha="center",
@@ -108,19 +107,26 @@ if archivo:
             )
 
     # =========================
-    # LEYENDA COMPLETA
+    # OCULTAR EJES
+    # =========================
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.axis("off")
+
+    # =========================
+    # LEYENDA
     # =========================
     legend_camiones = [
-        Patch(facecolor=color, edgecolor="black", label=f"Camión {camion}")
+        Patch(facecolor=color, edgecolor="none", label=f"Camión {camion}")
         for camion, color in colores_camion.items()
         if camion in df["Camion"].values
     ]
 
     legend_viajes = [
-        Line2D([0], [0], marker='o', color='w', label='Viaje 1 (Círculo)',
-               markerfacecolor='gray', markersize=8),
-        Line2D([0], [0], marker='^', color='w', label='Viaje 2+ (Triángulo)',
-               markerfacecolor='gray', markersize=8)
+        Line2D([0], [0], marker='o', color='w', label='Viaje 1 (Círculo)', markerfacecolor='gray', markersize=8),
+        Line2D([0], [0], marker='^', color='w', label='Viaje 2+ (Triángulo)', markerfacecolor='gray', markersize=8)
     ]
 
     ax.legend(
@@ -130,29 +136,19 @@ if archivo:
         loc="upper left"
     )
 
-    # =========================
-    # ESTILO
-    # =========================
-    ax.set_title("Distribución de Taladros por Camión y Viaje", fontsize=14, fontweight="bold")
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-
-    # ❌ SIN GRILLA
-    ax.grid(False)
-
-    ax.set_aspect("equal")
-
     st.pyplot(fig)
 
     # =========================
-    # RESUMEN
+    # RESUMEN POR CAMIÓN Y VIAJE
     # =========================
-    st.subheader("🚛 Taladros por Camión")
+    st.subheader("🚛 Resumen de Carguío por Camión y Viaje")
 
-    resumen = df.groupby("Camion")["ID"].count().reset_index()
-    resumen.columns = ["Camión", "Taladros"]
+    resumen = df.groupby(["Camion", "Viaje"])['ID'].count().reset_index()
+    resumen.columns = ["Camión", "Viaje", "Taladros"]
 
-    st.dataframe(resumen)
+    resumen_pivot = resumen.pivot(index="Camión", columns="Viaje", values="Taladros").fillna(0)
+
+    st.dataframe(resumen_pivot)
 
 else:
     st.info("Sube un archivo Excel para visualizar el dashboard")
